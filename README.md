@@ -1,4 +1,6 @@
 # What is dynamic-java-compiler?
+[![Build Status](https://travis-ci.org/raulgomis/dynamic-java-compiler.svg?branch=master)](https://travis-ci.org/raulgomis/dynamic-java-compiler)
+
 _Dynamic-java-compiler_ is a library that allows users to dynamically compile and execute any java source code. Writing dynamically executed Java applications require some boilerplate code: working with classloaders, compilation error handling, etc. The idea behind this library is to free you from this development and let you focus on your business logic.
 
 # How does it work?
