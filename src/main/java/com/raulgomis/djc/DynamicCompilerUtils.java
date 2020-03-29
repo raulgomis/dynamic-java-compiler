@@ -12,7 +12,7 @@ public final class DynamicCompilerUtils {
 
     public static final String EMPTY = "";
 
-    public static URI createURI(String str) {
+    static URI createURI(String str) {
         try {
             return new URI(str);
         } catch (URISyntaxException e) {
@@ -20,8 +20,7 @@ public final class DynamicCompilerUtils {
         }
     }
 
-    public static String getQualifiedClassName(String packageName,
-                                        String className) {
+    static String getQualifiedClassName(String packageName, String className) {
         if (isEmpty(packageName)) {
             return className;
         } else {
@@ -29,11 +28,11 @@ public final class DynamicCompilerUtils {
         }
     }
 
-    public static String getClassNameWithExt(String className) {
+    static String getClassNameWithExt(String className) {
         return className + Kind.SOURCE.extension;
     }
 
-    public static boolean isEmpty(String str) {
+    static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
     }
 

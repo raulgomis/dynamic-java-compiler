@@ -1,13 +1,13 @@
 package com.raulgomis.djc;
 
-import java.util.Arrays;
-
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+import java.util.Arrays;
 
 public final class DynamicCompiler<T> {
 
@@ -23,7 +23,7 @@ public final class DynamicCompiler<T> {
             throw new DynamicCompilerException("Compiler not found");
         }
 
-        classLoader = new DynamicClassLoader(getClass().getClassLoader());
+        classLoader = new DynamicClassLoader(Thread.currentThread().getContextClassLoader());
         diagnostics = new DiagnosticCollector<>();
 
         StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(diagnostics, null, null);
@@ -33,10 +33,12 @@ public final class DynamicCompiler<T> {
     @SuppressWarnings("unchecked")
     public synchronized Class<T> compile(String packageName, String className, String javaSource) throws DynamicCompilerException {
         try {
+
             String qualifiedClassName = DynamicCompilerUtils.getQualifiedClassName(packageName, className);
-            DynamicSourceCode sourceObj = new DynamicSourceCode(className, javaSource);
-            DynamicSourceCode compiledObj = new DynamicSourceCode(qualifiedClassName);
-            dynamicExtendedFileManager.setSources(sourceObj, compiledObj);
+            DynamicStringObject sourceObj = new DynamicStringObject(className, javaSource);
+
+            dynamicExtendedFileManager.putFileForInput(StandardLocation.SOURCE_PATH, packageName,
+                                                       className + JavaFileObject.Kind.SOURCE.extension, sourceObj);
 
             CompilationTask task = compiler.getTask(null, dynamicExtendedFileManager, diagnostics, null, null, Arrays.asList(sourceObj));
             boolean result = task.call();
@@ -45,8 +47,9 @@ public final class DynamicCompiler<T> {
                 throw new DynamicCompilerException("Compilation failure", diagnostics.getDiagnostics());
             }
 
-            Class<T> newClass = (Class<T>) classLoader.loadClass(qualifiedClassName);
-            return newClass;
+            dynamicExtendedFileManager.close();
+
+            return (Class<T>) classLoader.loadClass(qualifiedClassName);
 
         } catch (Exception exception) {
             throw new DynamicCompilerException(exception, diagnostics.getDiagnostics());
