@@ -3,6 +3,7 @@ package com.raulgomis.djc;
 import javax.tools.SimpleJavaFileObject;
 
 public class DynamicStringObject extends SimpleJavaFileObject {
+
     private final String source;
 
     DynamicStringObject(String name, String source) {

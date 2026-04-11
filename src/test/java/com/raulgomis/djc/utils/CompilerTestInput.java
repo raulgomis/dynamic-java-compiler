@@ -1,7 +1,6 @@
 package com.raulgomis.djc.utils;
 
 import com.raulgomis.djc.DynamicCompilerUtils;
-
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -11,9 +10,13 @@ class CompilerTestInput implements Serializable {
 
     static final CompilerTestInput EMPTY = new CompilerTestInput(DynamicCompilerUtils.EMPTY, DynamicCompilerUtils.EMPTY);
 
-    private String className;
+    private final String className;
+    private final String source;
 
-    private String source;
+    CompilerTestInput(String className, String source) {
+        this.className = className;
+        this.source = source;
+    }
 
     String getClassName() {
         return className;
@@ -23,19 +26,16 @@ class CompilerTestInput implements Serializable {
         return source;
     }
 
-    CompilerTestInput(String className, String source) {
-        this.className = className;
-        this.source = source;
-    }
-
-
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         CompilerTestInput that = (CompilerTestInput) o;
-        return Objects.equals(className, that.className) &&
-                Objects.equals(source, that.source);
+        return Objects.equals(className, that.className) && Objects.equals(source, that.source);
     }
 
     @Override
@@ -46,8 +46,8 @@ class CompilerTestInput implements Serializable {
     @Override
     public String toString() {
         return "CompilerTestInput{" +
-                "className='" + className + '\'' +
-                ", source='" + source + '\'' +
-                '}';
+            "className='" + className + '\'' +
+            ", source='" + source + '\'' +
+            '}';
     }
 }

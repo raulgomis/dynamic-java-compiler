@@ -5,57 +5,41 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DynamicCompilerTest {
 
     @Test
-    void test01() {
+    void compilesAndInstantiatesSimpleRunnable() throws Exception {
         CompilerExecutor compilerExecutor = new CompilerExecutor();
-        try {
-            Class<Runnable> clazz = compilerExecutor.compile("Test01.java");
-            final Runnable r;
-            try {
-                r = clazz.newInstance();
-                r.run();
-            } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
-            assertNotNull(clazz);
-        } catch (DynamicCompilerException e) {
-            e.printStackTrace();
-            fail();
-        }
+
+        Class<Runnable> clazz = compilerExecutor.compile("Test01.java");
+        Runnable runnable = clazz.getDeclaredConstructor().newInstance();
+
+        runnable.run();
+        assertNotNull(clazz);
     }
 
     @Test
-    void test02() {
+    void returnsReadableDiagnosticsForCompilationFailure() {
         CompilerExecutor compilerExecutor = new CompilerExecutor();
-        try {
-            compilerExecutor.compile("Test02.java");
-            fail();
-        } catch (DynamicCompilerException e) {
-            assertEquals("Error on line 3: ';' expected\n",
-                    e.getDiagnosticsError());
-        }
+
+        DynamicCompilerException exception = assertThrows(
+            DynamicCompilerException.class,
+            () -> compilerExecutor.compile("Test02.java")
+        );
+
+        assertEquals("Error on line 3: ';' expected\n", exception.getDiagnosticsError());
     }
 
     @Test
-    void test03() {
-      CompilerExecutor compilerExecutor = new CompilerExecutor();
-      try {
-          Class<Runnable> clazz = compilerExecutor.compile("Test03.java");
-          final Runnable r;
-          try {
-              r = clazz.newInstance();
-              r.run();
-          } catch (InstantiationException | IllegalAccessException e) {
-              e.printStackTrace();
-          }
-          assertNotNull(clazz);
-      } catch (DynamicCompilerException e) {
-          e.printStackTrace();
-          fail();
-      }
+    void compilesRunnableWithImports() throws Exception {
+        CompilerExecutor compilerExecutor = new CompilerExecutor();
+
+        Class<Runnable> clazz = compilerExecutor.compile("Test03.java");
+        Runnable runnable = clazz.getDeclaredConstructor().newInstance();
+
+        runnable.run();
+        assertNotNull(clazz);
     }
 }
