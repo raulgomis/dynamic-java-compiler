@@ -1,5 +1,6 @@
 package com.raulgomis.djc;
 
+import java.util.List;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -7,15 +8,12 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
-import java.util.Arrays;
 
 public final class DynamicCompiler<T> {
 
-    private JavaCompiler compiler;
-    private DynamicExtendedFileManager dynamicExtendedFileManager;
-    private DynamicClassLoader classLoader;
-
-    private DiagnosticCollector<JavaFileObject> diagnostics;
+    private final JavaCompiler compiler;
+    private final DynamicExtendedFileManager dynamicExtendedFileManager;
+    private final DynamicClassLoader classLoader;
 
     public DynamicCompiler() throws DynamicCompilerException {
         compiler = ToolProvider.getSystemJavaCompiler();
@@ -24,33 +22,42 @@ public final class DynamicCompiler<T> {
         }
 
         classLoader = new DynamicClassLoader(Thread.currentThread().getContextClassLoader());
-        diagnostics = new DiagnosticCollector<>();
 
-        StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(diagnostics, null, null);
+        final StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(null, null, null);
         dynamicExtendedFileManager = new DynamicExtendedFileManager(standardFileManager, classLoader);
     }
 
     @SuppressWarnings("unchecked")
     public synchronized Class<T> compile(String packageName, String className, String javaSource) throws DynamicCompilerException {
+        final DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
         try {
+            final String qualifiedClassName = DynamicCompilerUtils.getQualifiedClassName(packageName, className);
+            final DynamicStringObject sourceObj = new DynamicStringObject(className, javaSource);
 
-            String qualifiedClassName = DynamicCompilerUtils.getQualifiedClassName(packageName, className);
-            DynamicStringObject sourceObj = new DynamicStringObject(className, javaSource);
+            dynamicExtendedFileManager.putFileForInput(
+                StandardLocation.SOURCE_PATH,
+                packageName,
+                className + JavaFileObject.Kind.SOURCE.extension,
+                sourceObj
+            );
 
-            dynamicExtendedFileManager.putFileForInput(StandardLocation.SOURCE_PATH, packageName,
-                                                       className + JavaFileObject.Kind.SOURCE.extension, sourceObj);
+            final CompilationTask task = compiler.getTask(
+                null,
+                dynamicExtendedFileManager,
+                diagnostics,
+                null,
+                null,
+                List.of(sourceObj)
+            );
 
-            CompilationTask task = compiler.getTask(null, dynamicExtendedFileManager, diagnostics, null, null, Arrays.asList(sourceObj));
-            boolean result = task.call();
-
-            if (!result) {
+            if (!task.call()) {
                 throw new DynamicCompilerException("Compilation failure", diagnostics.getDiagnostics());
             }
 
             dynamicExtendedFileManager.close();
-
             return (Class<T>) classLoader.loadClass(qualifiedClassName);
-
+        } catch (DynamicCompilerException exception) {
+            throw exception;
         } catch (Exception exception) {
             throw new DynamicCompilerException(exception, diagnostics.getDiagnostics());
         }

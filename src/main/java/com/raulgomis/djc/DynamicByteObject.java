@@ -1,11 +1,12 @@
 package com.raulgomis.djc;
 
-import javax.tools.SimpleJavaFileObject;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import javax.tools.SimpleJavaFileObject;
 
 public class DynamicByteObject extends SimpleJavaFileObject {
-    private ByteArrayOutputStream outputStream;
+
+    private final ByteArrayOutputStream outputStream;
 
     DynamicByteObject(String name, Kind kind) {
         super(DynamicCompilerUtils.createURI(name), kind);
