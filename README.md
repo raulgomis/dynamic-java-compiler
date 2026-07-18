@@ -28,27 +28,6 @@ remains compatible with Java 17 while builds can run on newer JDKs. A minimal
 runtime image without the `jdk.compiler` module cannot perform dynamic
 compilation.
 
-## Installation
-
-The current project version is `0.2-SNAPSHOT`. To install it in your local
-Maven repository:
-
-```shell
-git clone https://github.com/raulgomis/dynamic-java-compiler.git
-cd dynamic-java-compiler
-mvn install
-```
-
-Then add the dependency to your Maven project:
-
-```xml
-<dependency>
-    <groupId>com.raulgomis</groupId>
-    <artifactId>dynamic-java-compiler</artifactId>
-    <version>0.2-SNAPSHOT</version>
-</dependency>
-```
-
 ## Quick start
 
 Create the source code to compile:
