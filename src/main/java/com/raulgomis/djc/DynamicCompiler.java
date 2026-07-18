@@ -14,7 +14,6 @@ public final class DynamicCompiler<T> {
     private final JavaCompiler compiler;
     private final DynamicExtendedFileManager dynamicExtendedFileManager;
     private final DynamicClassLoader classLoader;
-    private final DiagnosticCollector<JavaFileObject> diagnostics;
 
     public DynamicCompiler() throws DynamicCompilerException {
         compiler = ToolProvider.getSystemJavaCompiler();
@@ -23,14 +22,14 @@ public final class DynamicCompiler<T> {
         }
 
         classLoader = new DynamicClassLoader(Thread.currentThread().getContextClassLoader());
-        diagnostics = new DiagnosticCollector<>();
 
-        final StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(diagnostics, null, null);
+        final StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(null, null, null);
         dynamicExtendedFileManager = new DynamicExtendedFileManager(standardFileManager, classLoader);
     }
 
     @SuppressWarnings("unchecked")
     public synchronized Class<T> compile(String packageName, String className, String javaSource) throws DynamicCompilerException {
+        final DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
         try {
             final String qualifiedClassName = DynamicCompilerUtils.getQualifiedClassName(packageName, className);
             final DynamicStringObject sourceObj = new DynamicStringObject(className, javaSource);

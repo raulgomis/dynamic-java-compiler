@@ -26,7 +26,7 @@ public final class DynamicCompilerException extends Exception {
     public String getDiagnosticsError() {
         final StringBuilder sb = new StringBuilder();
         diagnostics.forEach(diagnostic -> sb.append(
-            String.format("Error on line %d: %s%n", diagnostic.getLineNumber(), diagnostic.getMessage(null))
+            String.format("Error on line %d: %s\n", diagnostic.getLineNumber(), diagnostic.getMessage(null))
         ));
         return sb.toString();
     }

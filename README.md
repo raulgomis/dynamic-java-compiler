@@ -1,42 +1,177 @@
-# What is dynamic-java-compiler?
-![Build](https://github.com/raulgomis/dynamic-java-compiler/workflows/Build/badge.svg)
+# Dynamic Java Compiler
 
-_Dynamic-java-compiler_ is a library that allows users to dynamically compile and execute Java source code. Writing dynamically executed Java applications usually requires boilerplate code (working with classloaders, compilation error handling, etc.). This library removes that overhead so you can focus on business logic.
+[![Build](https://github.com/raulgomis/dynamic-java-compiler/actions/workflows/master.yml/badge.svg)](https://github.com/raulgomis/dynamic-java-compiler/actions/workflows/master.yml)
 
-## Java compatibility
+Compile Java source held in a string and load the resulting class directly into
+the running JVM.
 
-This project is configured to compile using Java **25** (`maven.compiler.release=25`) and has tests updated for modern JDK APIs.
+Dynamic Java Compiler wraps the standard Java compiler, an in-memory file
+manager, and a dedicated class loader behind a small API. Source and generated
+bytecode stay in memory, so callers do not need to manage temporary `.java` or
+`.class` files.
 
-## How does it work?
+## Features
 
-The dynamic compilation task is very simple with this library. Imagine we want to compile this source code introduced dynamically as a text string by the user:
+- Compiles Java source at runtime using the JDK compiler
+- Loads generated classes without writing bytecode to disk
+- Supports packages, imports, and nested classes
+- Returns structured compiler diagnostics on failure
+- Has no runtime dependencies outside the JDK
+
+## Requirements
+
+- Java 17 or later
+- A full JDK that includes the system Java compiler
+
+The project is compiled with `maven.compiler.release=17`, so its bytecode
+remains compatible with Java 17 while builds can run on newer JDKs. A minimal
+runtime image without the `jdk.compiler` module cannot perform dynamic
+compilation.
+
+## Installation
+
+The current project version is `0.2-SNAPSHOT`. To install it in your local
+Maven repository:
+
+```shell
+git clone https://github.com/raulgomis/dynamic-java-compiler.git
+cd dynamic-java-compiler
+mvn install
+```
+
+Then add the dependency to your Maven project:
+
+```xml
+<dependency>
+    <groupId>com.raulgomis</groupId>
+    <artifactId>dynamic-java-compiler</artifactId>
+    <version>0.2-SNAPSHOT</version>
+</dependency>
+```
+
+## Quick start
+
+Create the source code to compile:
 
 ```java
-public class Test01 implements Runnable {
-    public void run() {
-        System.out.println("Hello World!");
+String source = """
+    public class GreetingTask implements Runnable {
+        @Override
+        public void run() {
+            System.out.println("Hello from dynamically compiled code!");
+        }
     }
+    """;
+```
+
+Compile, instantiate, and execute it:
+
+```java
+import com.raulgomis.djc.DynamicCompiler;
+
+DynamicCompiler<Runnable> compiler = new DynamicCompiler<>();
+Class<Runnable> taskClass = compiler.compile(
+    null,
+    "GreetingTask",
+    source
+);
+
+Runnable task = taskClass.getDeclaredConstructor().newInstance();
+task.run();
+```
+
+The first argument to `compile` is the package name. Pass `null` or an empty
+string for the default package. The second argument is the simple class name
+and must agree with the class declared by the source.
+
+## Compiling a packaged class
+
+The package declared in the source must match the package passed to
+`compile`:
+
+```java
+String source = """
+    package example.tasks;
+
+    public class GreetingTask implements Runnable {
+        @Override
+        public void run() {
+            System.out.println("Hello!");
+        }
+    }
+    """;
+
+DynamicCompiler<Runnable> compiler = new DynamicCompiler<>();
+Class<Runnable> taskClass = compiler.compile(
+    "example.tasks",
+    "GreetingTask",
+    source
+);
+```
+
+The returned class has the binary name `example.tasks.GreetingTask`.
+
+## Handling compilation errors
+
+Compilation failures throw `DynamicCompilerException`. Use
+`getDiagnostics()` for structured JDK diagnostics or
+`getDiagnosticsError()` for a readable summary:
+
+```java
+import com.raulgomis.djc.DynamicCompilerException;
+
+try {
+    DynamicCompiler<Runnable> compiler = new DynamicCompiler<>();
+    compiler.compile(null, "BrokenTask", brokenSource);
+} catch (DynamicCompilerException exception) {
+    System.err.print(exception.getDiagnosticsError());
+
+    exception.getDiagnostics().forEach(diagnostic -> {
+        System.err.printf(
+            "line %d, column %d: %s%n",
+            diagnostic.getLineNumber(),
+            diagnostic.getColumnNumber(),
+            diagnostic.getMessage(null)
+        );
+    });
 }
 ```
 
-Now instantiate the compiler and compile the code:
+Diagnostic wording is produced by the active JDK and may differ between JDK
+versions.
 
-```java
-DynamicCompiler<Runnable> compiler = new DynamicCompiler<>();
-// Read source code as String
-Class<Runnable> clazz = compiler.compile(null, "Test01", source);
-Runnable runnable = clazz.getDeclaredConstructor().newInstance();
-runnable.run();
+## Security
+
+This library compiles code; it does not sandbox it. Once loaded and invoked,
+dynamically compiled code runs with the same permissions as the host
+application. Do not compile or execute untrusted source without a separate,
+appropriately isolated execution environment.
+
+## Building and testing
+
+Run the full verification build:
+
+```shell
+mvn verify
 ```
 
-The final result will be:
+This runs the JUnit 5 test suite and generates a JaCoCo coverage report at
+`target/site/jacoco/index.html`.
 
+For a clean build:
+
+```shell
+mvn clean verify
 ```
-Hello World!
-```
 
-## Contribution
+## Contributing
 
-You are welcome to contribute to the project using pull requests on GitHub.
+Pull requests are welcome. Please include focused tests for behavioral changes
+and run `mvn verify` before submitting.
 
-If you find a bug or want to request a feature, please use the [issue tracker](https://github.com/raulgomis/dynamic-java-compiler/issues) on GitHub.
+Use the [issue tracker](https://github.com/raulgomis/dynamic-java-compiler/issues)
+to report bugs or propose features.
+
+## License
+
+This project is available under the [MIT License](LICENSE).
